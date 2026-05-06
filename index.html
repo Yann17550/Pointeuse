@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>PointageGPS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="gps-icon">📍</div>
+      <div class="title-group">
+        <div class="title-main">Pointage</div>
+        <div class="title-sub">GPS</div>
+      </div>
+      <div class="clock-block">
+        <div id="clock" class="clock-time">18:25:10</div>
+        <div id="date" class="clock-date">Mer 06/Mai/2026</div>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- Statut actuel -->
+      <section class="card status-card">
+        <h2>STATUT ACTUEL</h2>
+        <div class="status-row">
+          <span id="service-status" class="status-pill status-off">Hors service</span>
+        </div>
+        <div class="status-row">
+          <span id="gps-status" class="status-pill status-gps-off">
+            Position GPS non acquise
+          </span>
+          <span class="status-dot dot-green"></span>
+        </div>
+        <div class="status-row buttons-row">
+          <button id="btn-arrivee" class="action-btn btn-arrivee">
+            Arrivée
+          </button>
+          <button id="btn-depart" class="action-btn btn-depart">
+            Départ
+          </button>
+        </div>
+      </section>
+
+      <!-- Cette semaine -->
+      <section class="card week-card">
+        <h2>CETTE SEMAINE</h2>
+        <div class="week-grid">
+          <div class="week-item">
+            <div id="week-days" class="week-value">1</div>
+            <div class="week-label">JOURS</div>
+          </div>
+          <div class="week-item">
+            <div id="week-hours" class="week-value">0min</div>
+            <div class="week-label">HEURES</div>
+          </div>
+          <div class="week-item">
+            <div id="week-avg" class="week-value">0min</div>
+            <div class="week-label">MOY/JOUR</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Historique -->
+      <section class="card history-card">
+        <div class="history-header">
+          <h2>HISTORIQUE</h2>
+          <div id="history-count" class="history-count">1 entrée</div>
+        </div>
+
+        <div id="history-list" class="history-list">
+          <!-- Exemple d’entrée (sera généré en JS)
+          <article class="history-item">
+            <div class="history-date-col">
+              <div class="history-day">06</div>
+              <div class="history-month">MAI</div>
+            </div>
+            <div class="history-detail-col">
+              <div class="history-row">
+                <span class="history-label">ARRIVÉE</span>
+                <span class="history-time">17:59</span>
+              </div>
+              <div class="history-row">
+                <span class="history-label">DÉPART</span>
+                <span class="history-time">17:59</span>
+              </div>
+              <div class="history-row">
+                <span class="history-location">
+                  Rue Félon, Saint-Denis-d'Oléron
+                </span>
+              </div>
+              <div class="history-row">
+                <span class="history-duration">0min DURÉE</span>
+              </div>
+            </div>
+          </article>
+          -->
+        </div>
+
+        <div class="history-footer">
+          <button id="btn-export" class="secondary-btn">
+            Exporter en CSV
+          </button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
