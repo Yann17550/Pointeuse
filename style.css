@@ -1,0 +1,381 @@
+:root {
+  --bg: #050711;
+  --card-bg: #111320;
+  --accent: #3f82ff;
+  --accent-soft: rgba(63,130,255,0.2);
+  --accent-danger: #ff3b57;
+  --accent-success: #21c172;
+  --text-main: #f9f9ff;
+  --text-muted: #a0a4c0;
+  --border-subtle: #222536;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+  --shadow-soft: 0 18px 55px rgba(0,0,0,0.55);
+  --font-main: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: radial-gradient(circle at top, #14172c 0, #050711 55%);
+  color: var(--text-main);
+  font-family: var(--font-main);
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.app {
+  width: 100%;
+  max-width: 460px;
+  padding: 16px;
+}
+
+/* Header */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.gps-icon {
+  font-size: 32px;
+  margin-right: 8px;
+}
+
+.title-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.title-main {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.title-sub {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.clock-block {
+  text-align: right;
+}
+
+.clock-time {
+  font-variant-numeric: tabular-nums;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.clock-date {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Layout main */
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Cards */
+
+.card {
+  background: linear-gradient(145deg, #111320, #191b30);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--border-subtle);
+}
+
+.card h2 {
+  font-size: 14px;
+  letter-spacing: 0.18em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin: 0 0 10px;
+}
+
+/* Statut actuel */
+
+.status-card {
+  position: relative;
+}
+
+.status-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.status-off {
+  background: rgba(255,59,87,0.08);
+  border-color: rgba(255,59,87,0.35);
+  color: var(--accent-danger);
+}
+
+.status-on {
+  background: rgba(33,193,114,0.09);
+  border-color: rgba(33,193,114,0.5);
+  color: var(--accent-success);
+}
+
+.status-gps-off {
+  background: rgba(255,204,0,0.08);
+  border-color: rgba(255,204,0,0.4);
+  color: #ffd15c;
+}
+
+.status-gps-on {
+  background: rgba(63,130,255,0.15);
+  border-color: rgba(63,130,255,0.6);
+  color: var(--accent);
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dot-green {
+  background: var(--accent-success);
+  box-shadow: 0 0 10px rgba(33,193,114,0.9);
+}
+
+.dot-red {
+  background: var(--accent-danger);
+  box-shadow: 0 0 10px rgba(255,59,87,0.9);
+}
+
+.buttons-row {
+  justify-content: flex-start;
+  margin-top: 4px;
+  gap: 10px;
+}
+
+.action-btn {
+  border-radius: var(--radius-pill);
+  padding: 7px 18px;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.06s ease, box-shadow 0.06s ease, opacity 0.1s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-arrivee {
+  background: linear-gradient(135deg, #21c172, #2fe08c);
+  color: #071308;
+  box-shadow: 0 10px 26px rgba(33,193,114,0.55);
+}
+
+.btn-depart {
+  background: linear-gradient(135deg, #ff3b57, #ff6a7a);
+  color: #220409;
+  box-shadow: 0 10px 26px rgba(255,59,87,0.55);
+}
+
+.action-btn:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.6);
+  opacity: 0.9;
+}
+
+/* Semaine */
+
+.week-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.week-grid {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.week-item {
+  flex: 1;
+  background: radial-gradient(circle at top, #1d2040, #14162b);
+  border-radius: 16px;
+  padding: 10px 8px;
+  border: 1px solid rgba(255,255,255,0.04);
+  text-align: center;
+}
+
+.week-value {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.week-label {
+  margin-top: 4px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--text-muted);
+}
+
+/* Historique */
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.history-count {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.history-list {
+  margin-top: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.history-item {
+  display: flex;
+  padding: 10px 8px;
+  border-radius: 14px;
+  background: rgba(10,12,28,0.75);
+  margin-bottom: 8px;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+
+.history-date-col {
+  width: 42px;
+  text-align: center;
+  border-right: 1px solid rgba(255,255,255,0.05);
+  margin-right: 10px;
+  padding-right: 6px;
+}
+
+.history-day {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.history-month {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  color: var(--text-muted);
+}
+
+.history-detail-col {
+  flex: 1;
+  font-size: 13px;
+}
+
+.history-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.history-label {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.history-time {
+  font-variant-numeric: tabular-nums;
+}
+
+.history-location {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.history-duration {
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.history-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.secondary-btn {
+  border-radius: var(--radius-pill);
+  padding: 6px 16px;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px dashed rgba(255,255,255,0.25);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.secondary-btn:hover {
+  border-style: solid;
+}
+
+/* Scrollbar light styling */
+
+.history-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.history-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.12);
+  border-radius: 4px;
+}
+
+/* Responsive */
+
+@media (max-width: 480px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .clock-block {
+    text-align: left;
+  }
+}
