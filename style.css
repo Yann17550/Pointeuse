@@ -1,381 +1,956 @@
-:root {
-  --bg: #050711;
-  --card-bg: #111320;
-  --accent: #3f82ff;
-  --accent-soft: rgba(63,130,255,0.2);
-  --accent-danger: #ff3b57;
-  --accent-success: #21c172;
-  --text-main: #f9f9ff;
-  --text-muted: #a0a4c0;
-  --border-subtle: #222536;
-  --radius-lg: 18px;
-  --radius-pill: 999px;
-  --shadow-soft: 0 18px 55px rgba(0,0,0,0.55);
-  --font-main: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-    "Segoe UI", sans-serif;
-}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>PointageGPS</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --card: #1a1a26;
+    --border: #2a2a40;
+    --accent: #00e5a0;
+    --accent2: #ff4d6a;
+    --accent3: #7b6cff;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --radius: 16px;
+  }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  background: radial-gradient(circle at top, #14172c 0, #050711 55%);
-  color: var(--text-main);
-  font-family: var(--font-main);
-}
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
 
-body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+  /* Animated background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
 
-.app {
-  width: 100%;
-  max-width: 460px;
-  padding: 16px;
-}
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(123,108,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
 
-/* Header */
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+  }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    padding-top: 8px;
+  }
 
-.gps-icon {
-  font-size: 32px;
-  margin-right: 8px;
-}
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
-.title-group {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 20px rgba(0,229,160,0.3);
+  }
 
-.title-main {
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
+  .logo h1 {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
 
-.title-sub {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-}
+  .logo span { color: var(--accent); }
 
-.clock-block {
-  text-align: right;
-}
+  .live-clock {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.6;
+  }
 
-.clock-time {
-  font-variant-numeric: tabular-nums;
-  font-size: 20px;
-  font-weight: 600;
-}
+  .live-clock .time {
+    font-size: 16px;
+    color: var(--text);
+    font-weight: 700;
+  }
 
-.clock-date {
-  font-size: 13px;
-  color: var(--text-muted);
-}
+  /* STATUS CARD */
+  .status-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.4s;
+  }
 
-/* Layout main */
+  .status-card.active-shift {
+    border-color: rgba(0,229,160,0.4);
+    box-shadow: 0 0 30px rgba(0,229,160,0.08);
+  }
 
-.main {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
+  .status-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent3), var(--accent));
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
 
-/* Cards */
+  .status-card.active-shift::before { opacity: 1; }
 
-.card {
-  background: linear-gradient(145deg, #111320, #191b30);
-  border-radius: var(--radius-lg);
-  padding: 14px 16px;
-  box-shadow: var(--shadow-soft);
-  border: 1px solid var(--border-subtle);
-}
+  .status-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
 
-.card h2 {
-  font-size: 14px;
-  letter-spacing: 0.18em;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  margin: 0 0 10px;
-}
+  .status-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
 
-/* Statut actuel */
+  .status-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+    transition: background 0.4s;
+    position: relative;
+  }
 
-.status-card {
-  position: relative;
-}
+  .status-dot.active {
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+  }
 
-.status-row {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px;
-  gap: 8px;
-}
+  .status-dot.active::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 1px solid var(--accent);
+    animation: pulse 2s infinite;
+  }
 
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
-  font-size: 13px;
-  font-weight: 500;
-  border: 1px solid transparent;
-}
+  @keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(2); }
+  }
 
-.status-off {
-  background: rgba(255,59,87,0.08);
-  border-color: rgba(255,59,87,0.35);
-  color: var(--accent-danger);
-}
+  .status-text {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
 
-.status-on {
-  background: rgba(33,193,114,0.09);
-  border-color: rgba(33,193,114,0.5);
-  color: var(--accent-success);
-}
+  .timer-display {
+    font-family: 'Space Mono', monospace;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    display: none;
+  }
 
-.status-gps-off {
-  background: rgba(255,204,0,0.08);
-  border-color: rgba(255,204,0,0.4);
-  color: #ffd15c;
-}
+  .timer-display.visible { display: block; }
 
-.status-gps-on {
-  background: rgba(63,130,255,0.15);
-  border-color: rgba(63,130,255,0.6);
-  color: var(--accent);
-}
-
-.status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.dot-green {
-  background: var(--accent-success);
-  box-shadow: 0 0 10px rgba(33,193,114,0.9);
-}
-
-.dot-red {
-  background: var(--accent-danger);
-  box-shadow: 0 0 10px rgba(255,59,87,0.9);
-}
-
-.buttons-row {
-  justify-content: flex-start;
-  margin-top: 4px;
-  gap: 10px;
-}
-
-.action-btn {
-  border-radius: var(--radius-pill);
-  padding: 7px 18px;
-  border: none;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: transform 0.06s ease, box-shadow 0.06s ease, opacity 0.1s;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-arrivee {
-  background: linear-gradient(135deg, #21c172, #2fe08c);
-  color: #071308;
-  box-shadow: 0 10px 26px rgba(33,193,114,0.55);
-}
-
-.btn-depart {
-  background: linear-gradient(135deg, #ff3b57, #ff6a7a);
-  color: #220409;
-  box-shadow: 0 10px 26px rgba(255,59,87,0.55);
-}
-
-.action-btn:active {
-  transform: translateY(1px) scale(0.98);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.6);
-  opacity: 0.9;
-}
-
-/* Semaine */
-
-.week-card {
-  display: flex;
-  flex-direction: column;
-}
-
-.week-grid {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.week-item {
-  flex: 1;
-  background: radial-gradient(circle at top, #1d2040, #14162b);
-  border-radius: 16px;
-  padding: 10px 8px;
-  border: 1px solid rgba(255,255,255,0.04);
-  text-align: center;
-}
-
-.week-value {
-  font-size: 18px;
-  font-variant-numeric: tabular-nums;
-}
-
-.week-label {
-  margin-top: 4px;
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  color: var(--text-muted);
-}
-
-/* Historique */
-
-.history-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-
-.history-count {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.history-list {
-  margin-top: 8px;
-  max-height: 280px;
-  overflow-y: auto;
-  padding-right: 2px;
-}
-
-.history-item {
-  display: flex;
-  padding: 10px 8px;
-  border-radius: 14px;
-  background: rgba(10,12,28,0.75);
-  margin-bottom: 8px;
-  border: 1px solid rgba(255,255,255,0.03);
-}
-
-.history-date-col {
-  width: 42px;
-  text-align: center;
-  border-right: 1px solid rgba(255,255,255,0.05);
-  margin-right: 10px;
-  padding-right: 6px;
-}
-
-.history-day {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.history-month {
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  color: var(--text-muted);
-}
-
-.history-detail-col {
-  flex: 1;
-  font-size: 13px;
-}
-
-.history-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 2px;
-}
-
-.history-label {
-  color: var(--text-muted);
-  font-weight: 500;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-}
-
-.history-time {
-  font-variant-numeric: tabular-nums;
-}
-
-.history-location {
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-.history-duration {
-  font-size: 12px;
-  color: var(--accent);
-}
-
-.history-footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 8px;
-}
-
-.secondary-btn {
-  border-radius: var(--radius-pill);
-  padding: 6px 16px;
-  background: transparent;
-  color: var(--text-muted);
-  border: 1px dashed rgba(255,255,255,0.25);
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.secondary-btn:hover {
-  border-style: solid;
-}
-
-/* Scrollbar light styling */
-
-.history-list::-webkit-scrollbar {
-  width: 5px;
-}
-
-.history-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.history-list::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.12);
-  border-radius: 4px;
-}
-
-/* Responsive */
-
-@media (max-width: 480px) {
-  .header {
-    flex-direction: column;
+  .location-info {
+    display: flex;
     align-items: flex-start;
-    gap: 6px;
+    gap: 8px;
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-top: 12px;
   }
-  .clock-block {
-    text-align: left;
+
+  .location-info svg { flex-shrink: 0; margin-top: 2px; }
+
+  .location-text {
+    font-size: 12px;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .location-text strong { color: var(--text); font-size: 13px; }
+
+  /* ACTION BUTTONS */
+  .action-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .btn {
+    border: none;
+    border-radius: var(--radius);
+    padding: 20px 16px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    letter-spacing: 0.5px;
+  }
+
+  .btn:active { transform: scale(0.96); }
+
+  .btn-icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  .btn-arrive {
+    background: linear-gradient(135deg, rgba(0,229,160,0.15), rgba(0,229,160,0.05));
+    border: 1px solid rgba(0,229,160,0.4);
+    color: var(--accent);
+  }
+
+  .btn-arrive:hover { background: linear-gradient(135deg, rgba(0,229,160,0.25), rgba(0,229,160,0.1)); }
+  .btn-arrive:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .btn-depart {
+    background: linear-gradient(135deg, rgba(255,77,106,0.15), rgba(255,77,106,0.05));
+    border: 1px solid rgba(255,77,106,0.4);
+    color: var(--accent2);
+  }
+
+  .btn-depart:hover { background: linear-gradient(135deg, rgba(255,77,106,0.25), rgba(255,77,106,0.1)); }
+  .btn-depart:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* SECTIONS */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .badge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+  }
+
+  /* HISTORY LIST */
+  .history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .history-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: center;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .history-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 8px 10px;
+    min-width: 50px;
+  }
+
+  .history-day {
+    font-family: 'Space Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .history-month {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .history-times {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .time-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+  }
+
+  .time-tag {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    min-width: 42px;
+    text-align: center;
+  }
+
+  .tag-arrive { background: rgba(0,229,160,0.15); color: var(--accent); }
+  .tag-depart { background: rgba(255,77,106,0.15); color: var(--accent2); }
+
+  .time-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .history-duration {
+    text-align: right;
+  }
+
+  .duration-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent3);
+  }
+
+  .duration-label {
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* STATS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 12px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* EXPORT BTN */
+  .btn-export {
+    width: 100%;
+    background: linear-gradient(135deg, rgba(123,108,255,0.15), rgba(123,108,255,0.05));
+    border: 1px solid rgba(123,108,255,0.4);
+    color: var(--accent3);
+    border-radius: var(--radius);
+    padding: 16px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-export:hover { background: linear-gradient(135deg, rgba(123,108,255,0.25), rgba(123,108,255,0.1)); }
+  .btn-export:active { transform: scale(0.98); }
+
+  /* TOAST */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: calc(100% - 32px);
+    max-width: 448px;
+  }
+
+  .toast {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
+  }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes toastOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(20px); }
+  }
+
+  .toast.success { border-color: rgba(0,229,160,0.4); }
+  .toast.error { border-color: rgba(255,77,106,0.4); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+  }
+
+  .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  /* LOADING SPINNER */
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Ripple effect */
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    transform: scale(0);
+    animation: ripple 0.6s linear;
+    background: rgba(255,255,255,0.15);
+    pointer-events: none;
+  }
+
+  @keyframes ripple {
+    to { transform: scale(4); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">📍</div>
+      <h1>Pointage<span>GPS</span></h1>
+    </div>
+    <div class="live-clock">
+      <div class="time" id="clockTime">--:--:--</div>
+      <div id="clockDate">--- --/--/----</div>
+    </div>
+  </header>
+
+  <!-- STATUS CARD -->
+  <div class="status-card" id="statusCard">
+    <div class="status-label">Statut actuel</div>
+    <div class="status-main">
+      <div class="status-dot" id="statusDot"></div>
+      <div class="status-text" id="statusText">Hors service</div>
+    </div>
+    <div class="timer-display" id="timerDisplay">00:00:00</div>
+    <div class="location-info" id="locationInfo">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" color="#6b6b8a">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+      </svg>
+      <div class="location-text" id="locationText">Position GPS non acquise</div>
+    </div>
+  </div>
+
+  <!-- ACTION BUTTONS -->
+  <div class="action-grid">
+    <button class="btn btn-arrive" id="btnArrive" onclick="handleArrive(event)">
+      <div class="btn-icon">🟢</div>
+      <span>Arrivée</span>
+    </button>
+    <button class="btn btn-depart" id="btnDepart" onclick="handleDepart(event)" disabled>
+      <div class="btn-icon">🔴</div>
+      <span>Départ</span>
+    </button>
+  </div>
+
+  <!-- STATS -->
+  <div class="section-header">
+    <div class="section-title">Cette semaine</div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value" id="statDays">0</div>
+      <div class="stat-label">Jours</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statHours">0h</div>
+      <div class="stat-label">Heures</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statAvg">-</div>
+      <div class="stat-label">Moy/jour</div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="section-header">
+    <div class="section-title">Historique</div>
+    <div class="badge" id="historyCount">0 entrées</div>
+  </div>
+  <div class="history-list" id="historyList">
+    <div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <p>Aucune entrée pour l'instant.<br>Pointez votre arrivée pour commencer.</p>
+    </div>
+  </div>
+
+  <!-- EXPORT -->
+  <button class="btn-export" onclick="exportCSV()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+    Exporter en CSV
+  </button>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+const KEY_RECORDS = 'pointage_records';
+const KEY_SESSION = 'pointage_session';
+
+let records = JSON.parse(localStorage.getItem(KEY_RECORDS) || '[]');
+let session = JSON.parse(localStorage.getItem(KEY_SESSION) || 'null');
+let timerInterval = null;
+let clockInterval = null;
+
+// ─── CLOCK ───────────────────────────────────────────────
+function startClock() {
+  function tick() {
+    const now = new Date();
+    const days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+    const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    document.getElementById('clockTime').textContent =
+      now.toLocaleTimeString('fr-FR');
+    document.getElementById('clockDate').textContent =
+      `${days[now.getDay()]} ${String(now.getDate()).padStart(2,'0')}/${months[now.getMonth()]}/${now.getFullYear()}`;
+  }
+  tick();
+  clockInterval = setInterval(tick, 1000);
+}
+
+// ─── GEOLOCATION ─────────────────────────────────────────
+function getPosition() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Géolocalisation non supportée'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({
+        lat: pos.coords.latitude.toFixed(6),
+        lng: pos.coords.longitude.toFixed(6),
+        accuracy: Math.round(pos.coords.accuracy)
+      }),
+      err => {
+        const msgs = {
+          1: 'Permission refusée',
+          2: 'Position indisponible',
+          3: 'Délai dépassé'
+        };
+        reject(new Error(msgs[err.code] || 'Erreur GPS'));
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  });
+}
+
+async function reverseGeocode(lat, lng) {
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=fr`);
+    const d = await r.json();
+    const a = d.address || {};
+    const parts = [a.road, a.city || a.town || a.village || a.municipality].filter(Boolean);
+    return parts.join(', ') || `${lat}, ${lng}`;
+  } catch {
+    return `${lat}, ${lng}`;
   }
 }
+
+// ─── TIMER ───────────────────────────────────────────────
+function formatDuration(ms) {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function formatDurationShort(ms) {
+  const totalMin = Math.floor(ms / 60000);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return h > 0 ? `${h}h${String(m).padStart(2,'0')}` : `${m}min`;
+}
+
+function startTimer() {
+  const timerEl = document.getElementById('timerDisplay');
+  timerEl.classList.add('visible');
+  timerInterval = setInterval(() => {
+    const elapsed = Date.now() - new Date(session.arriveTime).getTime();
+    timerEl.textContent = formatDuration(elapsed);
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  document.getElementById('timerDisplay').classList.remove('visible');
+}
+
+// ─── UI UPDATE ────────────────────────────────────────────
+function updateUI() {
+  const card = document.getElementById('statusCard');
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  const btnA = document.getElementById('btnArrive');
+  const btnD = document.getElementById('btnDepart');
+
+  if (session) {
+    card.classList.add('active-shift');
+    dot.classList.add('active');
+    txt.textContent = 'En service';
+    btnA.disabled = true;
+    btnD.disabled = false;
+    updateLocationDisplay(session.arriveLocation, session.arriveAddress);
+  } else {
+    card.classList.remove('active-shift');
+    dot.classList.remove('active');
+    txt.textContent = 'Hors service';
+    btnA.disabled = false;
+    btnD.disabled = true;
+    document.getElementById('locationText').innerHTML = 'Position GPS non acquise';
+  }
+
+  renderHistory();
+  renderStats();
+}
+
+function updateLocationDisplay(loc, addr) {
+  const el = document.getElementById('locationText');
+  el.innerHTML = `<strong>${addr || 'Adresse en cours...'}</strong><br>${loc.lat}, ${loc.lng} · ±${loc.accuracy}m`;
+}
+
+// ─── ARRIVE ──────────────────────────────────────────────
+async function handleArrive(e) {
+  addRipple(e);
+  const btn = document.getElementById('btnArrive');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div><span>GPS...</span>';
+
+  try {
+    const pos = await getPosition();
+    const now = new Date().toISOString();
+    const addr = await reverseGeocode(pos.lat, pos.lng);
+
+    session = {
+      arriveTime: now,
+      arriveLocation: pos,
+      arriveAddress: addr
+    };
+    localStorage.setItem(KEY_SESSION, JSON.stringify(session));
+
+    startTimer();
+    updateUI();
+    showToast('success', '🟢', `Arrivée pointée à ${new Date(now).toLocaleTimeString('fr-FR')}`);
+  } catch (err) {
+    showToast('error', '❌', err.message);
+    btn.disabled = false;
+  }
+
+  btn.innerHTML = '<div class="btn-icon">🟢</div><span>Arrivée</span>';
+}
+
+// ─── DEPART ──────────────────────────────────────────────
+async function handleDepart(e) {
+  addRipple(e);
+  const btn = document.getElementById('btnDepart');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div><span>GPS...</span>';
+
+  try {
+    const pos = await getPosition();
+    const now = new Date().toISOString();
+    const addr = await reverseGeocode(pos.lat, pos.lng);
+
+    const duration = new Date(now) - new Date(session.arriveTime);
+
+    const record = {
+      id: Date.now(),
+      date: new Date(session.arriveTime).toLocaleDateString('fr-FR'),
+      arriveTime: session.arriveTime,
+      departTime: now,
+      arriveLat: session.arriveLocation.lat,
+      arriveLng: session.arriveLocation.lng,
+      arriveAccuracy: session.arriveLocation.accuracy,
+      arriveAddress: session.arriveAddress,
+      departLat: pos.lat,
+      departLng: pos.lng,
+      departAccuracy: pos.accuracy,
+      departAddress: addr,
+      durationMs: duration
+    };
+
+    records.unshift(record);
+    localStorage.setItem(KEY_RECORDS, JSON.stringify(records));
+
+    session = null;
+    localStorage.removeItem(KEY_SESSION);
+    stopTimer();
+    updateUI();
+    showToast('success', '🔴', `Départ pointé · ${formatDurationShort(duration)} travaillé`);
+  } catch (err) {
+    showToast('error', '❌', err.message);
+    btn.disabled = false;
+  }
+
+  btn.innerHTML = '<div class="btn-icon">🔴</div><span>Départ</span>';
+}
+
+// ─── RENDER HISTORY ───────────────────────────────────────
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  const count = document.getElementById('historyCount');
+  count.textContent = `${records.length} entrée${records.length !== 1 ? 's' : ''}`;
+
+  if (records.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <p>Aucune entrée pour l'instant.<br>Pointez votre arrivée pour commencer.</p>
+      </div>`;
+    return;
+  }
+
+  const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+
+  list.innerHTML = records.slice(0, 20).map(r => {
+    const arriveDate = new Date(r.arriveTime);
+    const departDate = r.departTime ? new Date(r.departTime) : null;
+    return `
+      <div class="history-item">
+        <div class="history-date">
+          <div class="history-day">${String(arriveDate.getDate()).padStart(2,'0')}</div>
+          <div class="history-month">${months[arriveDate.getMonth()]}</div>
+        </div>
+        <div class="history-times">
+          <div class="time-row">
+            <span class="time-tag tag-arrive">Arrivée</span>
+            <span class="time-value">${arriveDate.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span>
+          </div>
+          <div class="time-row">
+            <span class="time-tag tag-depart">Départ</span>
+            <span class="time-value">${departDate ? departDate.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '—'}</span>
+          </div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;font-family:'Space Mono',monospace">${r.arriveAddress || `${r.arriveLat},${r.arriveLng}`}</div>
+        </div>
+        <div class="history-duration">
+          <div class="duration-value">${r.durationMs ? formatDurationShort(r.durationMs) : '—'}</div>
+          <div class="duration-label">durée</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ─── STATS ────────────────────────────────────────────────
+function renderStats() {
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const weekRecords = records.filter(r => new Date(r.arriveTime) >= startOfWeek && r.durationMs);
+  const uniqueDays = new Set(weekRecords.map(r => new Date(r.arriveTime).toDateString())).size;
+  const totalMs = weekRecords.reduce((acc, r) => acc + r.durationMs, 0);
+  const avgMs = uniqueDays > 0 ? totalMs / uniqueDays : 0;
+
+  document.getElementById('statDays').textContent = uniqueDays;
+  document.getElementById('statHours').textContent = totalMs > 0 ? formatDurationShort(totalMs) : '0h';
+  document.getElementById('statAvg').textContent = avgMs > 0 ? formatDurationShort(avgMs) : '-';
+}
+
+// ─── EXPORT CSV ───────────────────────────────────────────
+function exportCSV() {
+  if (records.length === 0) {
+    showToast('error', '⚠️', 'Aucune donnée à exporter');
+    return;
+  }
+
+  const headers = [
+    'Date','Heure Arrivée','Heure Départ','Durée (h)',
+    'Lat. Arrivée','Lng. Arrivée','Précision Arrivée (m)','Adresse Arrivée',
+    'Lat. Départ','Lng. Départ','Précision Départ (m)','Adresse Départ'
+  ];
+
+  const rows = records.map(r => {
+    const arrive = new Date(r.arriveTime);
+    const depart = r.departTime ? new Date(r.departTime) : null;
+    const durationH = r.durationMs ? (r.durationMs / 3600000).toFixed(2) : '';
+    return [
+      r.date,
+      arrive.toLocaleTimeString('fr-FR'),
+      depart ? depart.toLocaleTimeString('fr-FR') : '',
+      durationH,
+      r.arriveLat, r.arriveLng, r.arriveAccuracy,
+      `"${(r.arriveAddress || '').replace(/"/g, '""')}"`,
+      r.departLat || '', r.departLng || '', r.departAccuracy || '',
+      `"${(r.departAddress || '').replace(/"/g, '""')}"`
+    ].join(';');
+  });
+
+  const csv = '\uFEFF' + [headers.join(';'), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const today = new Date().toISOString().split('T')[0];
+  a.href = url;
+  a.download = `pointage_${today}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('success', '📥', `${records.length} entrée(s) exportée(s)`);
+}
+
+// ─── TOAST ────────────────────────────────────────────────
+function showToast(type, icon, message) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span style="font-size:18px">${icon}</span><span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3200);
+}
+
+// ─── RIPPLE ───────────────────────────────────────────────
+function addRipple(e) {
+  const btn = e.currentTarget;
+  const rect = btn.getBoundingClientRect();
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  const size = Math.max(rect.width, rect.height);
+  r.style.cssText = `width:${size}px;height:${size}px;left:${(e.clientX||rect.left+rect.width/2)-rect.left-size/2}px;top:${(e.clientY||rect.top+rect.height/2)-rect.top-size/2}px`;
+  btn.appendChild(r);
+  setTimeout(() => r.remove(), 700);
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+startClock();
+updateUI();
+if (session) startTimer();
+</script>
+</body>
+</html>
