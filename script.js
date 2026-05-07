@@ -1,14 +1,13 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // POINTAGE GPS - FRONTEND (PWA)
-// Version avec openShift / closeShift côté backend
+// Logique complète de pointage avec biométrie, GPS et sync Google Sheets
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ⚙️ CONFIGURATION
 const API_URL = 'https://script.google.com/macros/s/AKfycbyw4sHgjtbMzRxy1swvqt0J4QrBNIyvwflqiuQN-K1NJn2KULcAHX_gWk0N3APJhdS71w/exec';
 const STORAGE_KEY_SESSION = 'pointage_session';
-const STORAGE_KEY_SHIFT = 'pointage_current_shift';
+const STORAGE_KEY_EMPLOYEES = 'pointage_employees';
 const STORAGE_KEY_BIOMETRIC = 'pointage_biometric_';
-const STORAGE_KEY_DEVICE = 'pointage_device_id';
 
 // State
 let currentSession = null;
@@ -16,7 +15,6 @@ let timerInterval = null;
 let clockInterval = null;
 let currentPin = null;
 let currentEmployee = null;
-let currentDeviceId = null;
 
 // Employees list (sync avec Apps Script)
 const EMPLOYEES = {
@@ -29,42 +27,19 @@ const EMPLOYEES = {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 document.addEventListener('DOMContentLoaded', () => {
-  initializeDeviceId();
   initializePWA();
   startClock();
   setupEventListeners();
-
+  
+  // Check si session existante
   const savedSession = localStorage.getItem(STORAGE_KEY_SESSION);
-  const savedShift = localStorage.getItem(STORAGE_KEY_SHIFT);
-
   if (savedSession) {
-    try {
-      const session = JSON.parse(savedSession);
-      currentPin = session.pin;
-      currentEmployee = EMPLOYEES[currentPin] || session.employee || null;
-      if (!currentEmployee) {
-        hardReset();
-        return;
-      }
-      if (savedShift) {
-        currentSession = JSON.parse(savedShift);
-      }
-      loadMainScreen();
-    } catch (e) {
-      console.error('Restore error:', e);
-      hardReset();
-    }
+    const session = JSON.parse(savedSession);
+    currentPin = session.pin;
+    currentEmployee = EMPLOYEES[currentPin];
+    loadMainScreen();
   }
 });
-
-function initializeDeviceId() {
-  let id = localStorage.getItem(STORAGE_KEY_DEVICE);
-  if (!id) {
-    id = 'dev_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-    localStorage.setItem(STORAGE_KEY_DEVICE, id);
-  }
-  currentDeviceId = id;
-}
 
 function initializePWA() {
   if ('serviceWorker' in navigator) {
@@ -100,30 +75,33 @@ function setupEventListeners() {
 // PIN INPUT HANDLING
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function getPinFromInputs() {
-  return Array.from(document.querySelectorAll('.pin-digit')).map(i => i.value).join('');
-}
-
 function handlePinInput(e, index, allInputs) {
   const value = e.target.value;
+  
+  // Accepte seulement les chiffres
   if (!/^\d*$/.test(value)) {
     e.target.value = '';
     return;
   }
+  
+  // Si rempli, passe au suivant
   if (value && index < allInputs.length - 1) {
     allInputs[index + 1].focus();
   }
+  
   updatePinDisplay(allInputs);
 }
 
 function handlePinKeydown(e, index, allInputs) {
+  // Backspace
   if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
     allInputs[index - 1].focus();
     allInputs[index - 1].value = '';
     updatePinDisplay(allInputs);
   }
+  // Enter
   if (e.key === 'Enter') {
-    const fullPin = getPinFromInputs();
+    const fullPin = Array.from(allInputs).map(i => i.value).join('');
     if (fullPin.length === 4) {
       handleLogin();
     }
@@ -131,12 +109,14 @@ function handlePinKeydown(e, index, allInputs) {
 }
 
 function updatePinDisplay(allInputs) {
-  const fullPin = getPinFromInputs();
+  const fullPin = Array.from(allInputs).map(i => i.value).join('');
   const btnLogin = document.getElementById('btnLogin');
   const btnBiometric = document.getElementById('btnBiometric');
-
+  
+  // Active le bouton si PIN complet
   btnLogin.disabled = fullPin.length < 4;
-
+  
+  // Marque les inputs remplis
   allInputs.forEach((input, i) => {
     if (i < fullPin.length) {
       input.classList.add('filled');
@@ -144,7 +124,8 @@ function updatePinDisplay(allInputs) {
       input.classList.remove('filled');
     }
   });
-
+  
+  // Affiche biométrie si disponible et PIN correct
   if (fullPin.length === 4 && isBiometricAvailable() && isBiometricEnrolled(fullPin)) {
     btnBiometric.hidden = false;
   } else {
@@ -162,24 +143,13 @@ function handlePinClear() {
   document.getElementById('pin0').focus();
 }
 
-function hardReset() {
-  currentSession = null;
-  currentPin = null;
-  currentEmployee = null;
-  localStorage.removeItem(STORAGE_KEY_SESSION);
-  localStorage.removeItem(STORAGE_KEY_SHIFT);
-  stopTimer();
-  document.getElementById('mainScreen').classList.remove('active');
-  document.getElementById('loginScreen').classList.add('active');
-  handlePinClear();
-}
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // BIOMETRIC AUTHENTICATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function isBiometricAvailable() {
-  return window.PublicKeyCredential !== undefined && navigator.credentials !== undefined;
+  return window.PublicKeyCredential !== undefined &&
+         navigator.credentials !== undefined;
 }
 
 function isBiometricEnrolled(pin) {
@@ -191,6 +161,7 @@ async function enrollBiometric(pin) {
     showToast('info', 'ℹ️', 'Biométrie non disponible sur cet appareil');
     return;
   }
+
   try {
     const challenge = new Uint8Array(32);
     crypto.getRandomValues(challenge);
@@ -220,6 +191,7 @@ async function enrollBiometric(pin) {
     });
 
     if (credential) {
+      // Sauvegarde la biométrie
       localStorage.setItem(STORAGE_KEY_BIOMETRIC + pin, JSON.stringify({
         id: credential.id,
         pin: pin,
@@ -229,12 +201,15 @@ async function enrollBiometric(pin) {
     }
   } catch (err) {
     console.log('Biometric enrollment error:', err);
-    showToast('error', '❌', "Erreur lors de l'enregistrement");
+    showToast('error', '❌', 'Erreur lors de l\'enregistrement');
   }
 }
 
 async function handleBiometricAuth() {
-  const pin = getPinFromInputs();
+  const pin = Array.from(document.querySelectorAll('.pin-digit'))
+    .map(i => i.value)
+    .join('');
+
   if (!isBiometricAvailable()) {
     showToast('error', '❌', 'Biométrie non disponible');
     return;
@@ -242,7 +217,7 @@ async function handleBiometricAuth() {
 
   const btnBio = document.getElementById('btnBiometric');
   btnBio.disabled = true;
-  btnBio.innerHTML = '... Vérification...';
+  btnBio.innerHTML = '<div class="spinner"></div><span>Vérification...</span>';
 
   try {
     const challenge = new Uint8Array(32);
@@ -257,21 +232,24 @@ async function handleBiometricAuth() {
     });
 
     if (assertion) {
+      // Biométrie validée
       currentPin = pin;
       currentEmployee = EMPLOYEES[pin];
+      
       if (!currentEmployee) {
         showToast('error', '❌', 'PIN invalide');
         btnBio.disabled = false;
-        btnBio.innerHTML = '👆Utiliser empreinte';
+        btnBio.innerHTML = '<span>👆</span><span>Utiliser empreinte</span>';
         return;
       }
+
       loadMainScreen();
     }
   } catch (err) {
     console.log('Biometric auth error:', err);
     showToast('error', '❌', 'Authentification biométrique échouée');
     btnBio.disabled = false;
-    btnBio.innerHTML = '👆Utiliser empreinte';
+    btnBio.innerHTML = '<span>👆</span><span>Utiliser empreinte</span>';
   }
 }
 
@@ -280,13 +258,16 @@ async function handleBiometricAuth() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 async function handleLogin() {
-  const pin = getPinFromInputs();
+  const pin = Array.from(document.querySelectorAll('.pin-digit'))
+    .map(i => i.value)
+    .join('');
 
   if (pin.length !== 4) {
     showToast('error', '❌', 'PIN incomplet');
     return;
   }
 
+  // Valide le PIN
   if (!EMPLOYEES[pin]) {
     showToast('error', '❌', 'PIN invalide');
     handlePinClear();
@@ -296,12 +277,7 @@ async function handleLogin() {
   currentPin = pin;
   currentEmployee = EMPLOYEES[pin];
 
-  localStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify({
-    pin: currentPin,
-    employee: currentEmployee,
-    loginTime: new Date().toISOString(),
-  }));
-
+  // Propose d'enregistrer la biométrie
   if (isBiometricAvailable() && !isBiometricEnrolled(pin)) {
     setTimeout(() => {
       if (confirm(`Enregistrer votre empreinte pour ${currentEmployee.name} ?`)) {
@@ -318,18 +294,47 @@ async function handleLogin() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function loadMainScreen() {
+  // Sauvegarde la session
+  localStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify({
+    pin: currentPin,
+    loginTime: new Date().toISOString(),
+  }));
+
+  // Masque login, affiche main
   document.getElementById('loginScreen').classList.remove('active');
   document.getElementById('mainScreen').classList.add('active');
 
+  // Update UI
   document.getElementById('userName').textContent = currentEmployee.name;
   document.getElementById('userPin').textContent = `PIN: ${currentPin}`;
 
-  updateMainScreenUI();
+  // Charge la session existante si elle existe
+  const savedSession = localStorage.getItem('pointage_current_shift');
+  if (savedSession) {
+    const shift = JSON.parse(savedSession);
+    currentSession = shift;
+    updateMainScreenUI();
+    startTimer();
+  } else {
+    updateMainScreenUI();
+  }
 }
 
 function handleLogout() {
   if (confirm('Êtes-vous sûr de vouloir quitter ?')) {
-    hardReset();
+    currentSession = null;
+    currentPin = null;
+    currentEmployee = null;
+    
+    localStorage.removeItem(STORAGE_KEY_SESSION);
+    localStorage.removeItem('pointage_current_shift');
+    
+    stopTimer();
+    
+    document.getElementById('mainScreen').classList.remove('active');
+    document.getElementById('loginScreen').classList.add('active');
+    
+    handlePinClear();
   }
 }
 
@@ -372,7 +377,8 @@ function getPosition() {
 async function reverseGeocode(lat, lng) {
   try {
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=fr`
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=fr`,
+      { timeout: 5000 }
     );
     const data = await response.json();
     const address = data.address || {};
@@ -387,43 +393,20 @@ async function reverseGeocode(lat, lng) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ARRIVAL / DEPARTURE avec openShift / closeShift
+// ARRIVAL / DEPARTURE
 // ═══════════════════════════════════════════════════════════════════════════════
 
 async function handleArrive(e) {
   const btn = document.getElementById('btnArrive');
   btn.disabled = true;
-  btn.innerHTML = 'GPS...';
+  btn.innerHTML = '<div class="spinner"></div><span>GPS...</span>';
 
   try {
-    if (!currentPin) {
-      showToast('error', '❌', 'PIN non connecté');
-      return;
-    }
-
     const pos = await getPosition();
     const now = new Date();
     const address = await reverseGeocode(pos.lat, pos.lng);
 
-    const payload = {
-      action: 'openShift',
-      pin: currentPin,
-      deviceId: currentDeviceId,
-      time: now.toISOString(),
-      latitude: pos.lat,
-      longitude: pos.lng,
-      accuracy: pos.accuracy,
-      address: address,
-    };
-
-    const response = await sendToAPI(payload);
-
-    if (!response.success) {
-      showToast('error', '❌', response.message || 'Erreur Arrivée');
-      return;
-    }
-
-    const shift = response.data && response.data.activeShift ? response.data.activeShift : {
+    currentSession = {
       pin: currentPin,
       arriveTime: now.toISOString(),
       arriveLat: pos.lat,
@@ -432,70 +415,83 @@ async function handleArrive(e) {
       arriveAddress: address,
     };
 
-    currentSession = shift;
-    localStorage.setItem(STORAGE_KEY_SHIFT, JSON.stringify(currentSession));
+    // Sauvegarde localement
+    localStorage.setItem('pointage_current_shift', JSON.stringify(currentSession));
 
     updateMainScreenUI();
     startTimer();
-    showToast('success', '🟢', 'Arrivée pointée');
+
+    showToast('success', '🟢', `Arrivée pointée`);
   } catch (err) {
     showToast('error', '❌', err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = 'Arrivée';
   }
+
+  btn.disabled = false;
+  btn.innerHTML = '<div class="btn-action-icon">🟢</div><span>Arrivée</span>';
 }
 
 async function handleDepart(e) {
   const btn = document.getElementById('btnDepart');
   btn.disabled = true;
-  btn.innerHTML = 'GPS...';
+  btn.innerHTML = '<div class="spinner"></div><span>GPS...</span>';
 
   try {
-    if (!currentPin || !currentSession) {
-      showToast('error', '❌', 'Aucune session active');
-      return;
-    }
-
     const pos = await getPosition();
     const now = new Date();
     const address = await reverseGeocode(pos.lat, pos.lng);
 
-    const payload = {
-      action: 'closeShift',
+    // Complète la session
+    const data = {
       pin: currentPin,
-      deviceId: currentDeviceId,
-      time: now.toISOString(),
+      type: 'Départ',
+      time: now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
       latitude: pos.lat,
       longitude: pos.lng,
       accuracy: pos.accuracy,
       address: address,
     };
 
-    const response = await sendToAPI(payload);
+    // Envoie à l'API
+    const response = await sendToAPI(data);
 
-    if (!response.success) {
-      showToast('error', '❌', response.message || 'Erreur Départ');
-      return;
+    if (response.success) {
+      // Envoie aussi l'arrivée si pas encore envoyée
+      const arriveData = {
+        pin: currentPin,
+        type: 'Arrivée',
+        time: new Date(currentSession.arriveTime).toLocaleTimeString('fr-FR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+        latitude: currentSession.arriveLat,
+        longitude: currentSession.arriveLng,
+        accuracy: currentSession.arriveAccuracy,
+        address: currentSession.arriveAddress,
+      };
+
+      await sendToAPI(arriveData);
+
+      // Calcule la durée
+      const duration = Math.round(
+        (now.getTime() - new Date(currentSession.arriveTime).getTime()) / 60000
+      );
+
+      // Cleanup
+      currentSession = null;
+      localStorage.removeItem('pointage_current_shift');
+      stopTimer();
+      updateMainScreenUI();
+
+      showToast('success', '🔴', `Départ pointé · ${duration}min travaillé`);
+    } else {
+      showToast('error', '❌', response.message);
     }
-
-    const duration = Math.round(
-      (now.getTime() - new Date(currentSession.arriveTime).getTime()) / 60000
-    );
-
-    currentSession = null;
-    localStorage.removeItem(STORAGE_KEY_SHIFT);
-
-    stopTimer();
-    updateMainScreenUI();
-
-    showToast('success', '🔴', `Départ pointé · ${duration}min travaillé`);
   } catch (err) {
     showToast('error', '❌', err.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = 'Départ';
   }
+
+  btn.disabled = false;
+  btn.innerHTML = '<div class="btn-action-icon">🔴</div><span>Départ</span>';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -506,9 +502,6 @@ async function sendToAPI(data) {
   try {
     const response = await fetch(API_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8',
-      },
       body: JSON.stringify(data),
     });
 
@@ -525,7 +518,7 @@ async function sendToAPI(data) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// UI UPDATE & TIMER & CLOCK
+// UI UPDATE
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function updateMainScreenUI() {
@@ -542,12 +535,11 @@ function updateMainScreenUI() {
     txt.textContent = 'En service';
     btnArrive.disabled = true;
     btnDepart.disabled = false;
-
+    
     const address = currentSession.arriveAddress || 'Adresse en cours...';
     const coords = `${currentSession.arriveLat}, ${currentSession.arriveLng}`;
     const accuracy = `±${currentSession.arriveAccuracy}m`;
-
-    locationText.innerHTML = `<strong>${address}</strong><br>${coords} ${accuracy}`;
+    locationText.innerHTML = `<strong>${address}</strong>${coords} · ${accuracy}`;
   } else {
     card.classList.remove('active-shift');
     dot.classList.remove('active');
@@ -557,6 +549,10 @@ function updateMainScreenUI() {
     locationText.innerHTML = 'Position GPS non acquise';
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TIMER
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function formatDuration(ms) {
   const s = Math.floor(ms / 1000);
@@ -572,8 +568,6 @@ function startTimer() {
   const timerEl = document.getElementById('timerDisplay');
   timerEl.classList.add('visible');
 
-  stopTimer();
-
   timerInterval = setInterval(() => {
     const elapsed = Date.now() - new Date(currentSession.arriveTime).getTime();
     timerEl.textContent = formatDuration(elapsed);
@@ -581,15 +575,14 @@ function startTimer() {
 }
 
 function stopTimer() {
-  if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
-  const timerEl = document.getElementById('timerDisplay');
-  if (timerEl) {
-    timerEl.classList.remove('visible');
-  }
+  clearInterval(timerInterval);
+  timerInterval = null;
+  document.getElementById('timerDisplay').classList.remove('visible');
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function startClock() {
   function tick() {
@@ -598,13 +591,13 @@ function startClock() {
     const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 
     const timeEl = document.getElementById('clockTime');
-    const dateEl = document.getElementById('clockDate');
-
     if (timeEl) {
       timeEl.textContent = now.toLocaleTimeString('fr-FR');
     }
+
+    const dateEl = document.getElementById('clockDate');
     if (dateEl) {
-      dateEl.textContent = `${days[now.getDay()]} ${String(now.getDate()).padStart(2, '0')} ${months[now.getMonth()]}`;
+      dateEl.textContent = `${days[now.getDay()]} ${String(now.getDate()).padStart(2, '0')}/${months[now.getMonth()]}`;
     }
   }
 
