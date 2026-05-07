@@ -452,6 +452,14 @@ async function handleDepart(e) {
   btn.innerHTML = 'GPS...';
 
   try {
+    // 🔁 Restaure la session locale si perdue
+    if (!currentSession) {
+      const savedShift = localStorage.getItem(STORAGE_KEY_SHIFT);
+      if (savedShift) {
+        currentSession = JSON.parse(savedShift);
+      }
+    }
+
     if (!currentPin || !currentSession) {
       showToast('error', '❌', 'Aucune session active');
       return;
