@@ -1,106 +1,762 @@
-<html lang="fr"><head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>PointageGPS</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&amp;family=Syne:wght@400;600;800&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PointageGPS">
+  <meta name="theme-color" content="#0a0a0f">
+  
+  <title>PointageGPS RH</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
+  
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --card: #1a1a26;
+      --border: #2a2a40;
+      --accent: #00e5a0;
+      --accent-dark: #00c988;
+      --accent2: #ff4d6a;
+      --accent3: #7b6cff;
+      --text: #e8e8f0;
+      --muted: #6b6b8a;
+      --radius: 16px;
+      --success: #00e5a0;
+      --error: #ff4d6a;
+    }
 
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      position: relative;
+      overflow: auto;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    /* Background Grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: -200px;
+      right: -200px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(123,108,255,0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Screen Management */
+    .screen {
+      display: none;
+      flex: 1;
+      padding: 20px 16px 40px;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       LOGIN SCREEN
+       ═══════════════════════════════════════════════════════════════════ */
+
+    .login-screen {
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .login-logo {
+      font-size: 56px;
+      margin-bottom: 20px;
+      animation: bounce 0.8s ease;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .login-title {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .login-title span {
+      background: linear-gradient(135deg, var(--accent), var(--accent3));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .login-subtitle {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .pin-input-group {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .pin-digit {
+      width: 50px;
+      height: 60px;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 32px;
+      font-weight: 700;
+      text-align: center;
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+      transition: all 0.2s;
+    }
+
+    .pin-digit:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(0, 229, 160, 0.3);
+      transform: scale(1.05);
+    }
+
+    .pin-digit.filled {
+      background: var(--surface);
+      border-color: var(--accent);
+    }
+
+    .text-input {
+      width: 100%;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .text-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(0, 229, 160, 0.2);
+    }
+
+    .text-input::placeholder {
+      color: var(--muted);
+    }
+
+    .btn {
+      border: none;
+      border-radius: var(--radius);
+      padding: 16px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+      letter-spacing: 0.5px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: linear-gradient(135deg, rgba(0,229,160,0.15), rgba(0,229,160,0.05));
+      border: 1px solid rgba(0,229,160,0.4);
+      color: var(--accent);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, rgba(0,229,160,0.25), rgba(0,229,160,0.1));
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      margin-top: 12px;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-biometric {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .btn-biometric:hover:not(:disabled) {
+      background: var(--card);
+      border-color: var(--accent3);
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       MAIN SCREEN
+       ═══════════════════════════════════════════════════════════════════ */
+
+    .main-screen {
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-top: 8px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--accent), var(--accent3));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 0 20px rgba(0,229,160,0.3);
+    }
+
+    .logo h1 {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .logo span {
+      color: var(--accent);
+    }
+
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .live-clock {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .live-clock .time {
+      font-size: 16px;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .user-info {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .user-info-text {
+      flex: 1;
+    }
+
+    .user-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .user-pin {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 2px;
+    }
+
+    .btn-logout {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-logout:hover {
+      background: var(--card);
+      color: var(--accent2);
+    }
+
+    /* STATUS CARD */
+    .status-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s;
+    }
+
+    .status-card.active-shift {
+      border-color: rgba(0,229,160,0.4);
+      box-shadow: 0 0 30px rgba(0,229,160,0.08);
+    }
+
+    .status-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent3), var(--accent));
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    .status-card.active-shift::before {
+      opacity: 1;
+    }
+
+    .status-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .status-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+      transition: all 0.4s;
+      position: relative;
+    }
+
+    .status-dot.active {
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    .status-dot.active::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 1px solid var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(2); }
+    }
+
+    .status-text {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .timer-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      display: none;
+      text-align: center;
+    }
+
+    .timer-display.visible {
+      display: block;
+    }
+
+    .location-info {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-top: 16px;
+    }
+
+    .location-icon {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .location-text {
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--muted);
+      line-height: 1.6;
+      word-break: break-all;
+    }
+
+    .location-text strong {
+      color: var(--text);
+      font-size: 13px;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    /* ACTION BUTTONS */
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .btn-action {
+      border: none;
+      border-radius: var(--radius);
+      padding: 20px 16px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-action:active {
+      transform: scale(0.96);
+    }
+
+    .btn-action-icon {
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .btn-arrive {
+      background: linear-gradient(135deg, rgba(0,229,160,0.15), rgba(0,229,160,0.05));
+      border: 1px solid rgba(0,229,160,0.4);
+      color: var(--accent);
+    }
+
+    .btn-arrive:hover:not(:disabled) {
+      background: linear-gradient(135deg, rgba(0,229,160,0.25), rgba(0,229,160,0.1));
+    }
+
+    .btn-arrive:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .btn-depart {
+      background: linear-gradient(135deg, rgba(255,77,106,0.15), rgba(255,77,106,0.05));
+      border: 1px solid rgba(255,77,106,0.4);
+      color: var(--accent2);
+    }
+
+    .btn-depart:hover:not(:disabled) {
+      background: linear-gradient(135deg, rgba(255,77,106,0.25), rgba(255,77,106,0.1));
+    }
+
+    .btn-depart:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    /* TOAST NOTIFICATIONS */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: calc(100% - 32px);
+      max-width: 448px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
+      pointer-events: auto;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes toastOut {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(20px); }
+    }
+
+    .toast.success {
+      border-color: rgba(0,229,160,0.4);
+    }
+
+    .toast.error {
+      border-color: rgba(255,77,106,0.4);
+    }
+
+    /* UTILS */
+    .hidden {
+      display: none;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .mt-20 {
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
 
 <div class="app">
-  <header>
-    <div class="logo">
-      <div class="logo-icon">📍</div>
-      <h1>Pointage<span>GPS</span></h1>
+  <!-- ═══════════════════════════════════════════════════════════════════
+       LOGIN SCREEN
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="screen login-screen active" id="loginScreen">
+    <div class="login-header">
+      <div class="login-logo">📍</div>
+      <h1 class="login-title">Pointage<span>GPS</span></h1>
+      <p class="login-subtitle">RH Restaurant</p>
     </div>
-    <div class="live-clock">
-      <div class="time" id="clockTime">18:47:48</div>
-      <div id="clockDate">Mer 06/Mai/2026</div>
-    </div>
-  </header>
 
-  <!-- STATUS CARD -->
-  <div class="status-card" id="statusCard">
-    <div class="status-label">Statut actuel</div>
-    <div class="status-main">
-      <div class="status-dot" id="statusDot"></div>
-      <div class="status-text" id="statusText">Hors service</div>
+    <div class="form-group">
+      <label>Code PIN (4 chiffres)</label>
+      <div class="pin-input-group">
+        <input type="text" class="pin-digit" id="pin0" inputmode="numeric" maxlength="1">
+        <input type="text" class="pin-digit" id="pin1" inputmode="numeric" maxlength="1">
+        <input type="text" class="pin-digit" id="pin2" inputmode="numeric" maxlength="1">
+        <input type="text" class="pin-digit" id="pin3" inputmode="numeric" maxlength="1">
+      </div>
     </div>
-    <div class="timer-display" id="timerDisplay">00:00:08</div>
-    <div class="location-info" id="locationInfo">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" color="#6b6b8a">
-        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle>
-      </svg>
-      <div class="location-text" id="locationText">Position GPS non acquise</div>
-    </div>
-  </div>
 
-  <!-- ACTION BUTTONS -->
-  <div class="action-grid">
-    <button class="btn btn-arrive" id="btnArrive" onclick="handleArrive(event)"><div class="btn-icon">🟢</div><span>Arrivée</span></button>
-    <button class="btn btn-depart" id="btnDepart" onclick="handleDepart(event)" disabled=""><div class="btn-icon">🔴</div><span>Départ</span></button>
-  </div>
+    <button class="btn btn-primary" id="btnLogin" disabled>
+      <span id="btnLoginText">Entrer PIN</span>
+    </button>
 
-  <!-- STATS -->
-  <div class="section-header">
-    <div class="section-title">Cette semaine</div>
-  </div>
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-value" id="statDays">1</div>
-      <div class="stat-label">Jours</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value" id="statHours">0min</div>
-      <div class="stat-label">Heures</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value" id="statAvg">0min</div>
-      <div class="stat-label">Moy/jour</div>
+    <button class="btn btn-biometric" id="btnBiometric" hidden>
+      <span>👆</span>
+      <span>Utiliser empreinte</span>
+    </button>
+
+    <button class="btn btn-secondary" id="btnClear">Effacer</button>
+
+    <div class="text-center mt-20" style="color: var(--muted); font-size: 12px;">
+      <p>PWA • GPS Sécurisé • Données cryptées</p>
     </div>
   </div>
 
-  <!-- HISTORY -->
-  <div class="section-header">
-    <div class="section-title">Historique</div>
-    <div class="badge" id="historyCount">1 entrée</div>
-  </div>
-  <div class="history-list" id="historyList">
-      <div class="history-item">
-        <div class="history-date">
-          <div class="history-day">06</div>
-          <div class="history-month">Mai</div>
+  <!-- ═══════════════════════════════════════════════════════════════════
+       MAIN SCREEN
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="screen main-screen" id="mainScreen">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">📍</div>
+        <h1>Pointage<span>GPS</span></h1>
+      </div>
+      <div class="header-right">
+        <div class="live-clock">
+          <div class="time" id="clockTime">18:47:48</div>
+          <div id="clockDate">Mer 06/Mai</div>
         </div>
-        <div class="history-times">
-          <div class="time-row">
-            <span class="time-tag tag-arrive">Arrivée</span>
-            <span class="time-value">17:59</span>
-          </div>
-          <div class="time-row">
-            <span class="time-tag tag-depart">Départ</span>
-            <span class="time-value">17:59</span>
-          </div>
-          <div style="font-size:10px;color:var(--muted);margin-top:4px;font-family:'Space Mono',monospace">Rue Félon, Saint-Denis-d'Oléron</div>
-        </div>
-        <div class="history-duration">
-          <div class="duration-value">0min</div>
-          <div class="duration-label">durée</div>
-        </div>
-      </div></div>
+      </div>
+    </header>
 
-  <!-- EXPORT -->
-  <button class="btn-export" onclick="exportCSV()">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line>
-    </svg>
-    Exporter en CSV
-  </button>
+    <div class="user-info">
+      <div class="user-info-text">
+        <div class="user-name" id="userName">—</div>
+        <div class="user-pin" id="userPin">—</div>
+      </div>
+      <button class="btn-logout" id="btnLogout">Quitter</button>
+    </div>
+
+    <!-- STATUS CARD -->
+    <div class="status-card" id="statusCard">
+      <div class="status-label">Statut actuel</div>
+      <div class="status-main">
+        <div class="status-dot" id="statusDot"></div>
+        <div class="status-text" id="statusText">Hors service</div>
+      </div>
+      <div class="timer-display" id="timerDisplay">00:00:00</div>
+      <div class="location-info" id="locationInfo">
+        <div class="location-icon">📍</div>
+        <div class="location-text" id="locationText">Position GPS non acquise</div>
+      </div>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <div class="action-grid">
+      <button class="btn-action btn-arrive" id="btnArrive">
+        <div class="btn-action-icon">🟢</div>
+        <span>Arrivée</span>
+      </button>
+      <button class="btn-action btn-depart" id="btnDepart" disabled>
+        <div class="btn-action-icon">🔴</div>
+        <span>Départ</span>
+      </button>
+    </div>
+  </div>
 </div>
 
+<!-- TOAST CONTAINER -->
 <div class="toast-container" id="toastContainer"></div>
 
 <script src="script.js"></script>
 
-
-</body></html>
+</body>
+</html>
