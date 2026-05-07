@@ -418,11 +418,13 @@ async function handleArrive(e) {
 
     const response = await sendToAPI(payload);
 
+    // On log, mais on continue à créer la session locale quoi qu'il arrive
     if (!response.success) {
-      showToast('error', '❌', response.message || 'Erreur Arrivée');
-      return;
+      console.log('openShift error:', response.message);
+      // on pourra améliorer plus tard
     }
 
+    // Utilise la réponse si dispo, sinon fallback local
     const shift = response.data && response.data.activeShift ? response.data.activeShift : {
       pin: currentPin,
       arriveTime: now.toISOString(),
@@ -445,7 +447,6 @@ async function handleArrive(e) {
     btn.innerHTML = 'Arrivée';
   }
 }
-
 async function handleDepart(e) {
   const btn = document.getElementById('btnDepart');
   btn.disabled = true;
